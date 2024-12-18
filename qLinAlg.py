@@ -2,6 +2,18 @@ from mybase import *
 
 ##### Linear algebra #####
 
+def H(A: np.ndarray) -> np.ndarray:
+    """
+    Returns the Adjoint (conjugate transpose) of a matrix A
+
+    Args:
+        A (np.ndarray): Input matrix
+
+    Returns:
+        np.ndarray: Output matrix  A^*
+    """
+    return A.conj().T
+
 def is_herm(H: np.ndarray, tol: float = 1e-8) -> bool:
     """
     Checks if a matrix H is Hermitian or not.
@@ -26,8 +38,7 @@ def is_PSD(P: np.ndarray) -> bool:
         bool: Returns True if and only if H is PSD
     """
     eig_vals = sla.eigvalsh(P)
-    return is_herm(P) and eig_vals.min() >= 0
-
+    return is_herm(P) and eig_vals.min() >= -1e-10
 
 def is_density_matrix(D: np.ndarray, tol: float = 1e-8) -> bool:
     """
@@ -40,7 +51,20 @@ def is_density_matrix(D: np.ndarray, tol: float = 1e-8) -> bool:
         bool: Returns True if and only if D is PSD
     """    
     return is_PSD(D) and np.abs(tr(D) - 1) <= 1e-8
-    
+
+def is_unitary(U: np.ndarray) -> bool:
+    """
+    Checks if the input matrix is unitary 
+    Args:
+        U (np.ndarray): Input matrix
+
+    Returns:
+        bool: True if and only if U is unitary
+    """
+    d = U.shape[0]
+    Id = eye(d)
+    return np.allclose(Id, U@H(U)) and np.allclose(Id, H(U)@U)
+
 def MSR(P: np.ndarray) -> np.ndarray:
     """
     Faster function to compute matrix square root of a 
@@ -215,3 +239,91 @@ def multi_kron(*matrices: np.ndarray) -> np.ndarray:
     for B in matrices:
         A = np.kron(A, B) 
     return A
+
+def partial_trace(P: np.ndarray, dims: list, TracedOutSubsystem: int) -> np.ndarray:
+  """_summary_
+
+  Args:
+      P (np.ndarray): Bipartite matrix of shape (d0*d1, d0*d1) to be partial traced
+      dims (list): = [d0, d1]. Current implementation holds only for bipartite systems.
+      TracedOutSubsystem (int): The subsystem being traced out
+
+  Raises:
+      Exception: _description_
+
+  Returns:
+      np.ndarray: _description_
+  """
+  if len(dims) != 2: raise ValueError('Number of systems (and thereby dimensions) must be exactly 2.')
+  
+  d0, d1 = dims
+  P_tensor = P.reshape(d0, d1, d0, d1)
+  T = TracedOutSubsystem
+  
+  if T in [0, 1]:
+    P_tensor = np.trace(P_tensor, axis1 = T, axis2 = T+2)
+    return P_tensor
+  else:
+    raise ValueError('TracedOutSubsystem must be either 0 or 1')
+  
+def choi_projection(P: np.ndarray, dX: int, dY: int) -> np.ndarray:
+    """
+    Computes the Choi projection C of a bipartite matrix P.
+    P in Pos(X, Y) will be projected to Choi(X, Y),
+    which is a bipartite psd matrix with X-marginal equal to Identity.  
+
+    Args:
+        P (np.ndarray): Must be a PSD matrix of shape (dX * dY, dX * dY).
+        dX (int): Dimension of X subspace
+        dY (int): Dimension of Y subspace
+
+    Returns:
+        np.ndarray: The Bures projection to the set of Choi matrices
+    """
+    if not is_PSD(P): 
+        raise ValueError('Input matrix must be positive semidefinite.')
+
+    d = P.shape[0]
+    if d != dX*dY:
+        raise ValueError('Dimension mismatch. dX*dY must equal dimension of Input Matrix.')
+
+    PX = partial_trace(P, [dX, dY], 1)      # Compute the X-marginal of P
+
+    # Compute the projection to Choi states
+    C = mat_division(P, np.kron(PX, np.eye(dY)))        # Inefficient implementation for large matrices.
+    return C
+
+def is_choi(P: np.ndarray, dX: int, dY: int) -> bool:
+    """
+    Checks if P in Choi(X, Y)
+
+    Args:
+        P (np.ndarray): Matrix whose Choi-ness is to be checked
+        dX (int): dimension of X (input) space
+        dY (int): dimension of Y (output) space
+
+    Returns:
+        bool: True if and only if P in Choi(X, Y)
+    """
+    if not is_PSD(P):
+        print('Input matrix is not positive semidefinite')
+        return False
+
+    PX = partial_trace(P, [dX, dY], 1)      # Compute the X-marginal of P
+    if norm(PX - np.eye(dX)) > 1e-6:
+        print('X-marginal of Input matrix is not Identity')
+        return False
+
+    return True
+
+def matrix_modulus(A: np.ndarray) -> np.ndarray:
+
+    """
+    Returns the absolute value |A| = sqrt(A^* A) of a matrix A.
+    Args:
+        A (np.ndarray): Arbitrary matrix
+
+    Returns:
+        np.ndarray: |A| = sqrt(A^* A).
+    """
+    return MSR(A.conj().T @ A)

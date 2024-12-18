@@ -40,4 +40,31 @@ def density_matrix(d: int, r:int, seed: int = None) -> np.ndarray:
     rho = P / tr(P)       # Normalize to obtain density matrix
     return rho
 
-# def unitary_matrix(d: int, seed: int = None) -> np.ndarray:
+def unitary_matrix(d: int) -> np.ndarray:
+    """
+    Returns an d \times d Unitary matrix 
+
+    Args:
+        d (int): dimension of unitary matrix
+
+    Returns:
+        np.ndarray: Unitary matrix
+    """
+    A = np.random.rand(d,d)
+    return sla.polar(A)[0]
+
+def choi_State(dX: int, dY: int, r: int) -> np.ndarray:
+    """
+    Generates a random Choi state by Bures-projecting a random 
+    bipartite q
+
+    Args:
+        dX (int): dimension of X (input) subspace 
+        dY (int): dimension of Y (output) subspace
+        r (int): Rank of Choi matrix (which is equal to the Choi rank of the channel) 
+
+    Returns:
+        np.ndarray: A random Choi matrix
+    """
+    P = PSD_matrix(dX*dY, r)
+    return choi_projection(P, dX, dY)
