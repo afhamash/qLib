@@ -1,14 +1,4 @@
-import numpy as np
-import scipy as sp
-import matplotlib as mpl
-
-from numpy import linalg as la
-from scipy import linalg as sla
-from numpy.linalg import trace as tr
-from numpy import sqrt as sr
-from scipy.linalg import inv as inv
-from scipy.linalg import pinv as pinv
-from numpy.linalg import norm
+from mybase import *
 
 ##### Linear algebra #####
 
@@ -211,3 +201,17 @@ def geometric_mean(P: np.ndarray, Q: np.ndarray) -> np.ndarray:
         np.ndarray: PSD matrix
     """
     return star_product(MSR(mat_division(P , Q)) , Q)
+
+def multi_kron(*matrices: np.ndarray) -> np.ndarray:
+    """
+    Kronocker product of the list of input matrices.
+
+    Args:
+        matrices: An ordered list of np.ndarrays whose kronecker product is to be taken.
+    Returns:
+        np.ndarray: The kronecker product of all the matrices
+    """
+    A = 1 + 0j
+    for B in matrices:
+        A = np.kron(A, B) 
+    return A
