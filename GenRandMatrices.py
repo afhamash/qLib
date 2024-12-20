@@ -53,6 +53,20 @@ def unitary_matrix(d: int) -> np.ndarray:
     A = np.random.rand(d,d)
     return sla.polar(A)[0]
 
+def prob_vec(n: int) -> np.ndarray:
+    """
+    Return an n-dimensional proability vector
+
+    Args:
+        n (int): dimension of probability vector
+
+    Returns:
+        np.ndarray: an n-dimensional probability vector
+    """
+    p = np.random.rand(n)
+    p /= np.sum(p)      # Normalize to sum to 1
+    return p 
+
 def choi_State(dX: int, dY: int, r: int) -> np.ndarray:
     """
     Generates a random Choi state by Bures-projecting a random 

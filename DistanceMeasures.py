@@ -16,6 +16,19 @@ def fidelity(P: np.ndarray, Q: np.ndarray) -> float:
     P_hf = MSR(P)
     return tr(MSR(P_hf @ Q @ P_hf))
 
+def bures_distance_sq(P: np.ndarray, Q: np.ndarray) -> float:
+    """
+    Computes the squared Bures distance between two PSD matrices P and Q
+
+    Args:
+        P (np.ndarray): Input matrix
+        Q (np.ndarray): Input matrix
+
+    Returns:
+        float: The squared Bures distance between P and Q
+    """
+    return np.real(tr(P) + tr(Q) - 2*fidelity(P,Q))
+
 def hilbert_schmidt_distance(A: np.ndarray, B: np.ndarray) -> float:
     """
     Returns the HS (Euclidean) distance between matrices A and B.
